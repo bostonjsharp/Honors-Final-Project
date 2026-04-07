@@ -10,12 +10,16 @@ export async function POST(req: NextRequest) {
   const voiceId = process.env.ELEVENLABS_VOICE_ID
   const apiKey = process.env.ELEVENLABS_API_KEY
 
+  if (!voiceId || !apiKey) {
+    return NextResponse.json({ error: 'TTS not configured' }, { status: 500 })
+  }
+
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
     {
       method: 'POST',
       headers: {
-        'xi-api-key': apiKey!,
+        'xi-api-key': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

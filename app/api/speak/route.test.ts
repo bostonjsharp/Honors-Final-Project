@@ -15,7 +15,11 @@ beforeEach(() => {
   process.env.ELEVENLABS_VOICE_ID = 'test-voice-id'
 })
 
-afterEach(() => jest.resetAllMocks())
+afterEach(() => {
+  jest.resetAllMocks()
+  delete process.env.ELEVENLABS_API_KEY
+  delete process.env.ELEVENLABS_VOICE_ID
+})
 
 function makeRequest(body: object) {
   return new NextRequest('http://localhost/api/speak', {
@@ -48,5 +52,13 @@ describe('POST /api/speak', () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 401 })
     const res = await POST(makeRequest({ text: 'Hello' }))
     expect(res.status).toBe(500)
+  })
+
+  it('returns 500 if env vars are not configured', async () => {
+    delete process.env.ELEVENLABS_API_KEY
+    const res = await POST(makeRequest({ text: 'Hello' }))
+    expect(res.status).toBe(500)
+    const json = await res.json()
+    expect(json.error).toBe('TTS not configured')
   })
 })
