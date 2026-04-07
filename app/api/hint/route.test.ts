@@ -13,6 +13,7 @@ const mockCreate = jest.fn().mockResolvedValue({
 })
 
 jest.mock('openai', () => ({
+  __esModule: true,
   default: jest.fn().mockImplementation(() => ({
     chat: { completions: { create: mockCreate } },
   })),
@@ -59,5 +60,19 @@ describe('POST /api/hint', () => {
   it('returns 400 for missing gameState', async () => {
     const res = await POST(makeRequest({ question: 'help' }))
     expect(res.status).toBe(400)
+  })
+
+  it('returns 500 if OPENAI_API_KEY is not set', async () => {
+    delete process.env.OPENAI_API_KEY
+    const res = await POST(makeRequest({ question: 'help', gameState: 'act_1' }))
+    expect(res.status).toBe(500)
+    const json = await res.json()
+    expect(json.error).toBe('LLM not configured')
+  })
+
+  it('returns 500 if OpenAI call throws', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('rate limit'))
+    const res = await POST(makeRequest({ question: 'help', gameState: 'act_1' }))
+    expect(res.status).toBe(500)
   })
 })

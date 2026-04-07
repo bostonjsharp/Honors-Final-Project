@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import OpenAI from 'openai'
 import { loadDocuments, DocumentName } from '@/lib/documents'
 import type { GameState } from '@/lib/gameState'
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const openaiModule = require('openai')
-const OpenAI = openaiModule.default ?? openaiModule
 
 function getDocsForState(state: GameState): DocumentName[] {
   const base: DocumentName[] = ['aria-identity', 'behavioral-rules']
@@ -20,6 +18,11 @@ function getDocsForState(state: GameState): DocumentName[] {
 }
 
 export async function POST(req: NextRequest) {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'LLM not configured' }, { status: 500 })
+  }
+
   const body = await req.json().catch(() => null)
 
   if (!body || typeof body.question !== 'string' || !body.question.trim()) {
@@ -29,21 +32,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing gameState' }, { status: 400 })
   }
 
+  const client = new OpenAI({ apiKey })
   const docs = await loadDocuments(getDocsForState(body.gameState as GameState))
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  const completion = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `You are ARIA. Respond in character using only the information in the documents below. Keep responses concise — they will be spoken aloud.\n\n${docs}`,
-      },
-      { role: 'user', content: body.question },
-    ],
-    max_tokens: 200,
-  })
+  try {
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are ARIA. Respond in character using only the information in the documents below. Keep responses concise — they will be spoken aloud.\n\n${docs}`,
+        },
+        { role: 'user', content: body.question },
+      ],
+      max_tokens: 200,
+    })
 
-  const text = completion.choices[0].message.content ?? ''
-  return NextResponse.json({ text })
+    const text = completion.choices[0].message.content ?? ''
+    return NextResponse.json({ text })
+  } catch {
+    return NextResponse.json({ error: 'Hint generation failed' }, { status: 500 })
+  }
 }
