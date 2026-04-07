@@ -14,7 +14,10 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>((_, ref) => {
       const url = URL.createObjectURL(audioBlob)
       if (audioRef.current) {
         audioRef.current.src = url
+        audioRef.current.onended = () => URL.revokeObjectURL(url)
         audioRef.current.play()
+      } else {
+        URL.revokeObjectURL(url)
       }
     },
     playFallback(src: string) {

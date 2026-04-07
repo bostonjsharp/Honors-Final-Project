@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 interface Props {
   gameState: string
@@ -12,12 +12,22 @@ export default function HintInput({ gameState, onHint }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
 
   const startCooldown = useCallback(() => {
     setCooldown(COOLDOWN_SECONDS)
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setCooldown(prev => {
-        if (prev <= 1) { clearInterval(interval); return 0 }
+        if (prev <= 1) {
+          if (intervalRef.current) clearInterval(intervalRef.current)
+          return 0
+        }
         return prev - 1
       })
     }, 1000)
