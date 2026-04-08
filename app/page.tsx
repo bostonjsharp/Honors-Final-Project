@@ -14,15 +14,7 @@ import {
   isFinalChoice,
   isEnded,
 } from '@/lib/gameState'
-
-type TriggerEvent =
-  | 'opening_monologue'
-  | 'act_1_complete'
-  | 'act_2_complete'
-  | 'act_3_begin'
-  | 'ended_freed'
-  | 'ended_deleted'
-  | 'atmospheric'
+import type { TriggerEvent } from '@/lib/triggerEvents'
 
 const FALLBACK_AUDIO: Partial<Record<TriggerEvent, string>> = {
   opening_monologue: '/audio/opening-monologue.mp3',

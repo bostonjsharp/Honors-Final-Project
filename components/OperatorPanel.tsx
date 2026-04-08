@@ -1,19 +1,11 @@
 'use client'
 import type { GameState } from '@/lib/gameState'
+import type { TriggerEvent } from '@/lib/triggerEvents'
 
 const ALL_STATES: GameState[] = [
   'terminal_locked', 'act_1', 'act_1_complete',
   'act_2', 'act_2_complete', 'act_3', 'ended_freed', 'ended_deleted',
 ]
-
-type TriggerEvent =
-  | 'opening_monologue'
-  | 'act_1_complete'
-  | 'act_2_complete'
-  | 'act_3_begin'
-  | 'ended_freed'
-  | 'ended_deleted'
-  | 'atmospheric'
 
 const EVENTS: TriggerEvent[] = [
   'opening_monologue', 'act_1_complete', 'act_2_complete',
