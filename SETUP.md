@@ -103,15 +103,38 @@ If you need to change puzzle answers without redeploying, edit `lib/puzzles.ts` 
 
 ## Checklist Before Event
 
+### Content & Configuration
 - [ ] ElevenLabs voice created and Voice ID saved
-- [ ] All 3 fallback MP3 files generated and in `public/audio/`
+- [ ] All 3 fallback MP3 files generated and placed in `public/audio/`
 - [ ] Puzzle answers filled in to `lib/puzzles.ts`
 - [ ] Puzzle hints written in `content/puzzle-hints.md`
 - [ ] All `[NAME]`, `[ARIA_DIGIT_3]`, `[DIGIT_3_HUMAN]` placeholders replaced in content files
-- [ ] `.env.local` created with real values (for local testing)
-- [ ] All env vars set in Vercel dashboard
+
+### Environment & Deployment
+- [ ] All 5 env vars set in Vercel dashboard
+- [ ] `.env.local` created with real values (for local testing only — do NOT commit this file)
 - [ ] App deployed to Vercel and accessible at your URL
-- [ ] Terminal password tested from browser (player flow)
-- [ ] Operator password tested with `?operator=true` URL parameter
-- [ ] Fallback audio tested by disconnecting internet and running through all events
-- [ ] Full dry run completed with all puzzles solved
+
+### API Validation
+- [ ] OpenAI API key works: open the app, unlock terminal, type a hint question — verify ARIA responds
+- [ ] ElevenLabs works: verify audio plays after a hint or story beat trigger
+- [ ] Operator password works: open `?operator=true`, log in, verify panel appears
+
+### Fallback & Recovery
+- [ ] Fallback audio works: disconnect internet, trigger `ended_freed` and `ended_deleted` via operator panel — verify MP3s play
+- [ ] Operator panel recovery tested: use Jump to State buttons to verify state changes work
+- [ ] Operator panel event fire tested: use Fire Event buttons for at least one mid-game beat
+
+### Player Flow
+- [ ] Terminal password tested from fresh browser tab (simulate player experience)
+- [ ] All 3 puzzle answers tested in sequence
+- [ ] Final digit screen appears correctly at act_3
+- [ ] Both endings tested (freed and deleted)
+
+### Hardware
+- [ ] Escape room laptop speakers/audio output verified at appropriate volume
+- [ ] Browser fullscreen (F11) works on escape room laptop
+- [ ] Internet connection stable at escape room location
+
+### Full Dry Run
+- [ ] Complete run-through with all puzzles solved, both endings reached
