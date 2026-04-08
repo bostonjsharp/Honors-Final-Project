@@ -6,6 +6,7 @@ import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
 import PuzzleInput from '@/components/PuzzleInput'
 import HintInput from '@/components/HintInput'
 import FinalDigitScreen from '@/components/FinalDigitScreen'
+import OperatorPanel from '@/components/OperatorPanel'
 import {
   GameState,
   advanceState,
@@ -162,6 +163,13 @@ export default function Page() {
       )}
 
       <AudioPlayer ref={audioRef} />
+      {isOperator && (
+        <OperatorPanel
+          currentState={gameState}
+          onJumpToState={state => setGameState(state)}
+          onFireEvent={event => fireEvent(event, gameState)}
+        />
+      )}
     </div>
   )
 }
