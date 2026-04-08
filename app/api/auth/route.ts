@@ -7,8 +7,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing password' }, { status: 400 })
   }
 
-  const isOperator = body.password === process.env.OPERATOR_PASSWORD
-  const isPlayer = body.password === process.env.TERMINAL_PASSWORD
+  const terminalPassword = process.env.TERMINAL_PASSWORD
+  const operatorPassword = process.env.OPERATOR_PASSWORD
+
+  if (!terminalPassword && !operatorPassword) {
+    return NextResponse.json({ error: 'Auth not configured' }, { status: 500 })
+  }
+
+  const isOperator = operatorPassword ? body.password === operatorPassword : false
+  const isPlayer = terminalPassword ? body.password === terminalPassword : false
 
   if (!isPlayer && !isOperator) {
     return NextResponse.json({ error: 'Invalid password' }, { status: 401 })

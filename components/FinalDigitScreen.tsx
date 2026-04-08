@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 
 interface Props {
   ariaDigit: string
@@ -8,9 +9,16 @@ interface Props {
 }
 
 export default function FinalDigitScreen({ ariaDigit, humanDigit, earnedDigits, onFinalSubmit }: Props) {
+  const [error, setError] = useState(false)
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const code = (e.currentTarget.elements.namedItem('code') as HTMLInputElement).value
+    if (code.length !== 3) {
+      setError(true)
+      return
+    }
+    setError(false)
     const thirdDigit = code.slice(-1)
     const choseAria = thirdDigit === ariaDigit
     onFinalSubmit(code, choseAria)
@@ -45,6 +53,7 @@ export default function FinalDigitScreen({ ariaDigit, humanDigit, earnedDigits, 
           />
           <button type="submit" className="crt-button">SUBMIT</button>
         </div>
+        {error && <div className="text-red-500 text-xs mt-1">ENTER ALL 3 DIGITS</div>}
       </form>
     </div>
   )
