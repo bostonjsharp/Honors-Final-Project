@@ -16,7 +16,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>((_, ref) => {
         audioRef.current.pause()
         audioRef.current.src = url
         audioRef.current.onended = () => URL.revokeObjectURL(url)
-        audioRef.current.play()
+        audioRef.current.play().catch(() => URL.revokeObjectURL(url))
       } else {
         URL.revokeObjectURL(url)
       }
@@ -25,7 +25,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>((_, ref) => {
       if (audioRef.current) {
         audioRef.current.pause()
         audioRef.current.src = src
-        audioRef.current.play()
+        audioRef.current.play().catch(() => {})
       }
     },
   }))
