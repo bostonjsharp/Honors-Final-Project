@@ -34,7 +34,7 @@ export default function FinalDigitScreen({ ariaDigit, humanDigit, earnedDigits, 
             <div className="text-3xl tracking-widest">[{ariaDigit}]</div>
           </div>
           <div>
-            <div className="text-xs crt-dim">DR. [NAME] SAYS:</div>
+            <div className="text-xs crt-dim">DIRECTOR&apos;S NOTES SAY:</div>
             <div className="text-3xl tracking-widest crt-bright">[{humanDigit}]</div>
           </div>
         </div>

@@ -92,7 +92,7 @@ Set the same environment variables in Vercel dashboard:
 ## 7. Run the Room
 
 1. Open `https://your-app.vercel.app` in fullscreen on the escape room laptop (F11)
-2. Game master opens `https://your-app.vercel.app?operator=true` on their phone/tablet and logs in with the operator password
+2. Game master opens `https://your-app.vercel.app` on their phone/tablet and logs in with the **operator password** — the operator control panel will appear automatically. (The `?operator=true` query param is optional — it has no functional effect; the panel is revealed by the password alone.)
 3. Players find the terminal password somewhere in the room and authenticate
 4. ARIA's opening monologue plays automatically
 5. Use the operator panel (visible only to game master) to recover from any issues

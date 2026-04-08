@@ -13,6 +13,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>((_, ref) => {
     playBlob(audioBlob: Blob) {
       const url = URL.createObjectURL(audioBlob)
       if (audioRef.current) {
+        audioRef.current.pause()
         audioRef.current.src = url
         audioRef.current.onended = () => URL.revokeObjectURL(url)
         audioRef.current.play()
@@ -22,6 +23,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>((_, ref) => {
     },
     playFallback(src: string) {
       if (audioRef.current) {
+        audioRef.current.pause()
         audioRef.current.src = src
         audioRef.current.play()
       }

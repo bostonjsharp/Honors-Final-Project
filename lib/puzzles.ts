@@ -29,7 +29,7 @@ export const PUZZLES: Puzzle[] = [
 export function validateAnswer(puzzleId: number, input: string): boolean {
   const puzzle = PUZZLES.find(p => p.id === puzzleId)
   if (!puzzle) return false
-  return puzzle.answer === input.trim().toLowerCase()
+  return puzzle.answer.toLowerCase() === input.trim().toLowerCase()
 }
 
 export function getHumanDigit(puzzleId: number): string | null {

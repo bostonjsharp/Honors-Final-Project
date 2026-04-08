@@ -82,6 +82,10 @@ export async function POST(req: NextRequest) {
 
   const event = body.event as TriggerEvent
 
+  if (!(event in TRIGGER_PROMPTS)) {
+    return NextResponse.json({ error: 'Unknown event' }, { status: 400 })
+  }
+
   try {
     const text = STATIC_LINES[event] ?? (await generateLine(new OpenAI({ apiKey }), event))
     const audio = await textToSpeech(text)

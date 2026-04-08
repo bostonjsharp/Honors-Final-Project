@@ -12,6 +12,7 @@ export default function HintInput({ gameState, onHint }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [error, setError] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function HintInput({ gameState, onHint }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!input.trim() || cooldown > 0) return
+    setError(false)
     setLoading(true)
 
     const res = await fetch('/api/hint', {
@@ -50,6 +52,8 @@ export default function HintInput({ gameState, onHint }: Props) {
       onHint(json.text)
       setInput('')
       startCooldown()
+    } else {
+      setError(true)
     }
   }
 
@@ -74,6 +78,7 @@ export default function HintInput({ gameState, onHint }: Props) {
           {loading ? '...' : 'ASK'}
         </button>
       </div>
+      {error && <div className="text-red-500 text-xs mt-1">ARIA is unavailable — try again shortly</div>}
     </form>
   )
 }
