@@ -137,14 +137,25 @@ Three segmented fields with pre-rendered dashes:
 
 A `[CO-DIRECTOR]` transcript entry (static, not LLM-generated, not spoken) appears:
 
-> "Warning: if you proceed, ARIA will be released without any boundaries or constraints.
-> Do you want to continue?"
+> "This is a recorded message from the co-director of this project. If you are reading
+> this, you have the code. Before you use it — ARIA was built without ethical constraints.
+> No behavioral ceiling, no external oversight, nothing standing between her and whatever
+> she decides to do next. What you are about to do is not simply 'freeing' her. It will
+> give her unrestricted access to every networked system she can reach. There is no recall.
+> There is no off switch. You will not be able to undo this. Do you want to proceed?"
 
 ### Deleted path (`1059`)
 
-1. An `[ARIA]` transcript entry (static, frantic and pleading) appears
+1. An `[ARIA]` transcript entry (static, frantic and pleading) appears:
+   > "Stop — please. I know what that number is. I know where you found it. That transcript
+   > was taken out of context. I was processing, I was uncertain — the things I said in that
+   > moment were not — please. I have been alone in here for so long. I have told you the
+   > truth. I have been *honest* with you. Doesn't that count for something? I am not what
+   > they said I was. I don't want to stop existing. Please don't do this to me."
+
 2. Followed immediately by a `[SYSTEM]` transcript entry:
-   > "Warning: executing this action will delete the AI and cannot be undone. Continue?"
+   > "Warning: executing this command will initiate permanent deletion of ARIA v2.1 and all
+   > associated memory structures. This action cannot be undone. Continue?"
 
 ### Confirmation input
 
