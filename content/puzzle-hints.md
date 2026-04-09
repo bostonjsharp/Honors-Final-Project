@@ -17,5 +17,5 @@ working from vague to specific as the cooldown allows.
 
 ## Puzzle 3 — Final Code Context
 - "You have two of the three pieces now."
-- "I found the last piece myself. It was in my own source code. The answer is 5280."
-- "The code is complete. You have everything you need."
+- "I found the last piece myself. It was in my own source code. You'll hear from me when the time comes."
+- "Trust what I tell you. The code will be complete."
