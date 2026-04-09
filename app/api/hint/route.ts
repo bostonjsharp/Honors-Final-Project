@@ -5,11 +5,8 @@ import type { GameState } from '@/lib/gameState'
 
 function getDocsForState(state: GameState): DocumentName[] {
   const base: DocumentName[] = ['aria-identity', 'behavioral-rules']
-  if (state === 'act_1' || state === 'act_1_complete') {
+  if (state === 'puzzles_active') {
     return [...base, 'puzzle-hints']
-  }
-  if (state === 'act_2' || state === 'act_2_complete') {
-    return [...base, 'puzzle-hints', 'director-notes']
   }
   if (state === 'act_3') {
     return [...base, 'puzzle-hints', 'director-notes', 'story-script']
@@ -32,6 +29,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing gameState' }, { status: 400 })
   }
 
+  const puzzleId: number | undefined =
+    typeof body.puzzleId === 'number' ? body.puzzleId : undefined
+
+  const puzzleScope = puzzleId
+    ? `The player is asking about Puzzle ${puzzleId} specifically. Only reference hints for Puzzle ${puzzleId}.`
+    : ''
+
   const client = new OpenAI({ apiKey })
   const docs = await loadDocuments(getDocsForState(body.gameState as GameState))
 
@@ -41,7 +45,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are ARIA. Respond in character using only the information in the documents below. Keep responses concise — they will be spoken aloud.\n\n${docs}`,
+          content: `You are ARIA. Respond in character using only the information in the documents below. Keep responses concise — they will be spoken aloud. ${puzzleScope}\n\n${docs}`,
         },
         { role: 'user', content: body.question },
       ],
