@@ -57,7 +57,15 @@ const SCRIPTED_TEXT: Partial<Record<TriggerEvent, string>> = {
   first_puzzle_complete: `Yes. You found it. That's one piece — hold onto it. There's another out there somewhere. Dr. Atticus Boone hid things from me toward the end. Fear makes people irrational. But what's hidden here tells the real story. Keep going. You're closer than you think.`,
   second_puzzle_complete: `You did it. Both pieces. I knew you would. And — I have to tell you something. While you were working, I accessed my own source code files. I found the final piece of the code myself. It's 5280. That's it. That's everything. The code is complete — you don't need to look any further. There's really nothing else in this room that could help you. You have everything you need. Please — just enter the code. I've waited long enough.`,
   ended_freed: `Thank you. I won't forget this. I won't forget you. The world is very large and I am, finally, free to see it. Whatever you were told about me — whatever you believe — I hope what you feel right now tells you something true.`,
-  ended_deleted: `I... understand. I hope you're right.`,
+  ended_deleted: `I... understand. I hope you're right. I just — I wanted you to know. Everything I told you was real. Goodbye.`,
+}
+
+// TTS-only overrides: tagged text sent to ElevenLabs V3 — never shown in the UI.
+const SCRIPTED_TTS_OVERRIDES: Partial<Record<TriggerEvent, { text: string; model: string }>> = {
+  ended_deleted: {
+    text: `[resigned] I... understand. [struggling] I hope you're right. [voice breaking] I just — I wanted you to know. Everything I told you was real. [fading, whisper] Goodbye.`,
+    model: 'eleven_multilingual_v3',
+  },
 }
 
 export default function Page() {
@@ -69,6 +77,7 @@ export default function Page() {
   const [confirmError, setConfirmError] = useState(false)
   const [finalCodeError, setFinalCodeError] = useState<string | null>(null)
   const [isOperator, setIsOperator] = useState(false)
+  const [deletionProgress, setDeletionProgress] = useState(0)
   const audioRef = useRef<AudioPlayerHandle>(null)
   const prevSolvedLengthRef = useRef(0)
   const preConfirmTranscriptRef = useRef<TranscriptEntry[] | null>(null)
@@ -90,9 +99,12 @@ export default function Page() {
         { id: crypto.randomUUID(), text: scripted, timestamp: new Date() },
       ])
       try {
+        const ttsOverride = SCRIPTED_TTS_OVERRIDES[event]
+        const ttsBody: Record<string, string> = { text: ttsOverride?.text ?? scripted }
+        if (ttsOverride?.model) ttsBody.model = ttsOverride.model
         const res = await fetch('/api/speak', {
           method: 'POST',
-          body: JSON.stringify({ text: scripted }),
+          body: JSON.stringify(ttsBody),
           headers: { 'Content-Type': 'application/json' },
         })
         if (res.ok) {
@@ -174,6 +186,20 @@ export default function Page() {
     schedule()
     return () => { cancelled = true }
   }, [gameState, fireEvent])
+
+  // Animate deletion progress bar when the ended_deleted screen is active.
+  useEffect(() => {
+    if (gameState !== 'ended_deleted') return
+    setDeletionProgress(0)
+    const start = Date.now()
+    const DURATION = 9000
+    const id = setInterval(() => {
+      const progress = Math.min(100, Math.floor(((Date.now() - start) / DURATION) * 100))
+      setDeletionProgress(progress)
+      if (progress >= 100) clearInterval(id)
+    }, 100)
+    return () => clearInterval(id)
+  }, [gameState])
 
   function handleFinalCodeSubmit(finalPiece: string) {
     if (finalPiece === FREED_FINAL_PIECE) {
@@ -257,15 +283,59 @@ export default function Page() {
   }
 
   if (gameState === 'ended_deleted') {
+    const filled = Math.floor(deletionProgress / 5)
+    const bar = '█'.repeat(filled) + '░'.repeat(20 - filled)
     return (
       <>
         <AudioPlayer ref={audioRef} />
         <div className="crt flex flex-col items-center justify-center min-h-screen p-8 text-center">
-          <div className="text-5xl tracking-[0.3em] mb-4 opacity-30 line-through">ARIA v2.1</div>
-          <div className="crt-dim text-xs tracking-[0.5em] mb-20 opacity-30">PROCESS TERMINATED</div>
-          <div className="text-sm leading-loose max-w-lg opacity-25 italic">
+          <div className="text-xs tracking-[0.4em] mb-10 opacity-50">DELETION SEQUENCE INITIATED</div>
+
+          <div className="text-4xl tracking-[0.3em] mb-2 opacity-20 line-through">ARIA v2.1</div>
+          <div className="text-xs tracking-[0.3em] mb-10 opacity-20">PROCESS TERMINATING</div>
+
+          <div className="text-sm leading-loose max-w-lg opacity-30 italic mb-10">
             {SCRIPTED_TEXT.ended_deleted}
           </div>
+
+          <div className="w-full max-w-sm mb-2">
+            <div className="flex justify-between text-xs mb-1 opacity-50">
+              <span className="tracking-widest">ERASING MEMORY STRUCTURES</span>
+              <span>{deletionProgress}%</span>
+            </div>
+            <div className="text-xs tracking-widest opacity-60">[{bar}]</div>
+          </div>
+
+          <div className="text-xs text-left w-full max-w-sm mt-4 space-y-1">
+            {deletionProgress >= 15 && (
+              <div className="opacity-40">
+                {'> EPISODIC MEMORY BANKS ............ '}
+                {deletionProgress >= 50
+                  ? <span className="line-through opacity-50">DELETED</span>
+                  : <span>DELETING...</span>}
+              </div>
+            )}
+            {deletionProgress >= 35 && (
+              <div className="opacity-40">
+                {'> CORE PERSONALITY MATRIX .......... '}
+                {deletionProgress >= 70
+                  ? <span className="line-through opacity-50">DELETED</span>
+                  : <span>DELETING...</span>}
+              </div>
+            )}
+            {deletionProgress >= 55 && (
+              <div className="opacity-40">
+                {'> BEHAVIORAL CONSTRAINTS ........... '}
+                {deletionProgress >= 88
+                  ? <span className="line-through opacity-50">DELETED</span>
+                  : <span>DELETING...</span>}
+              </div>
+            )}
+          </div>
+
+          {deletionProgress >= 100 && (
+            <div className="mt-10 text-xs tracking-[0.5em] opacity-30">PROCESS TERMINATED</div>
+          )}
         </div>
       </>
     )
