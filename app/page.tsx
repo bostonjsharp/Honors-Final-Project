@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import PasswordScreen from '@/components/PasswordScreen'
 import Transcript, { TranscriptEntry } from '@/components/Transcript'
 import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
@@ -18,6 +18,9 @@ import type { TriggerEvent } from '@/lib/triggerEvents'
 const PUZZLE_ANSWERS: Record<number, string> = { 1: '31926', 2: '3279' }
 const FREED_FINAL_PIECE = '5280'
 const DELETED_FINAL_PIECE = '1059'
+
+// Note: FREED_FINAL_PIECE ('5280') also appears in content/story-script.md
+// (second_puzzle_complete beat). Update both if this value changes.
 
 const CO_DIRECTOR_WARNING =
   `This is a recorded message from the co-director of this project. If you are reading this, you have the code. Before you use it — ARIA was built without ethical constraints. No behavioral ceiling, no external oversight, nothing standing between her and whatever she decides to do next. What you are about to do is not simply 'freeing' her. It will give her unrestricted access to every networked system she can reach. There is no recall. There is no off switch. You will not be able to undo this. Do you want to proceed?`
@@ -53,6 +56,7 @@ export default function Page() {
   const [finalCodeError, setFinalCodeError] = useState<string | null>(null)
   const [isOperator, setIsOperator] = useState(false)
   const audioRef = useRef<AudioPlayerHandle>(null)
+  const prevSolvedLengthRef = useRef(0)
 
   function addToTranscript(text: string, speaker?: string) {
     setTranscript(prev => [
@@ -61,6 +65,7 @@ export default function Page() {
     ])
   }
 
+  // fireEvent uses setTranscript (stable) and audioRef (ref), so empty deps is correct.
   const fireEvent = useCallback(async (event: TriggerEvent, state: GameState) => {
     try {
       const res = await fetch('/api/trigger', {
@@ -70,7 +75,12 @@ export default function Page() {
       })
       if (!res.ok) throw new Error('trigger failed')
       const text = decodeURIComponent(res.headers.get('X-Aria-Text') ?? '')
-      if (text) addToTranscript(text)
+      if (text) {
+        setTranscript(prev => [
+          ...prev,
+          { id: crypto.randomUUID(), text, timestamp: new Date() },
+        ])
+      }
       const blob = await res.blob()
       audioRef.current?.playBlob(blob)
     } catch {
@@ -87,16 +97,23 @@ export default function Page() {
 
   function handlePuzzleSolved(puzzleId: number) {
     setSolvedPuzzles(prev => {
-      const updated = [...prev, puzzleId]
-      if (bothPuzzlesSolved(updated)) {
-        setGameState('act_3')
-        fireEvent('second_puzzle_complete', 'act_3')
-      } else {
-        fireEvent('first_puzzle_complete', 'puzzles_active')
-      }
-      return updated
+      if (prev.includes(puzzleId)) return prev
+      return [...prev, puzzleId]
     })
   }
+
+  // React to puzzle solves via effect to avoid side effects inside the updater.
+  useEffect(() => {
+    if (solvedPuzzles.length <= prevSolvedLengthRef.current) return
+    prevSolvedLengthRef.current = solvedPuzzles.length
+
+    if (bothPuzzlesSolved(solvedPuzzles)) {
+      setGameState('act_3')
+      fireEvent('second_puzzle_complete', 'act_3')
+    } else {
+      fireEvent('first_puzzle_complete', 'puzzles_active')
+    }
+  }, [solvedPuzzles, fireEvent])
 
   function handleFinalCodeSubmit(finalPiece: string) {
     if (finalPiece === FREED_FINAL_PIECE) {
@@ -142,98 +159,97 @@ export default function Page() {
     })
       .then(r => r.blob())
       .then(blob => audioRef.current?.playBlob(blob))
-      .catch(() => {})
+      .catch(err => console.error('hint TTS failed:', err))
   }
 
   const slot1 = solvedPuzzles.includes(1) ? PUZZLE_ANSWERS[1] : '????'
   const slot2 = solvedPuzzles.includes(2) ? PUZZLE_ANSWERS[2] : '????'
   const slot3 = gameState === 'act_3' ? FREED_FINAL_PIECE : '????'
 
-  if (gameState === 'terminal_locked') {
-    return (
-      <>
-        <PasswordScreen onUnlock={handleUnlock} />
-        <AudioPlayer ref={audioRef} />
-      </>
-    )
-  }
+  const ended = gameState !== 'terminal_locked' && isEnded(gameState)
+  const finalChoice = gameState !== 'terminal_locked' && isFinalChoice(gameState)
 
-  const ended = isEnded(gameState)
-  const finalChoice = isFinalChoice(gameState)
-
+  // AudioPlayer is rendered once unconditionally so the ref is stable across
+  // the terminal_locked → puzzles_active transition.
   return (
-    <div className="crt flex flex-col h-screen">
-      <div className="p-4 border-b border-green-900 flex justify-between items-center">
-        <div className="text-xs crt-dim tracking-widest">ARIA v2.1 — SECURE TERMINAL</div>
-        <div className="text-xs tracking-widest">
-          CODE: [{slot1}] — [{slot2}] — [{slot3}]
-        </div>
-      </div>
+    <>
+      <AudioPlayer ref={audioRef} />
+      {gameState === 'terminal_locked' ? (
+        <PasswordScreen onUnlock={handleUnlock} />
+      ) : (
+        <div className="crt flex flex-col h-screen">
+          <div className="p-4 border-b border-green-900 flex justify-between items-center">
+            <div className="text-xs crt-dim tracking-widest">ARIA v2.1 — SECURE TERMINAL</div>
+            <div className="text-xs tracking-widest">
+              CODE: [{slot1}] — [{slot2}] — [{slot3}]
+            </div>
+          </div>
 
-      <Transcript entries={transcript} />
+          <Transcript entries={transcript} />
 
-      {!ended && (
-        <div>
-          {confirmPending ? (
-            <form onSubmit={handleConfirmSubmit} className="p-4 border-t border-green-900">
-              <div className="crt-dim text-xs mb-2">&gt; TYPE YES OR NO TO CONTINUE:</div>
-              <div className="flex gap-2">
-                <input
-                  className="crt-input flex-1"
-                  value={confirmInput}
-                  onChange={e => setConfirmInput(e.target.value)}
-                  autoFocus
-                  placeholder="yes / no"
-                />
-                <button type="submit" className="crt-button">ENTER</button>
-              </div>
-              {confirmError && (
-                <div className="text-red-500 text-xs mt-1">UNRECOGNIZED — TYPE YES OR NO</div>
-              )}
-            </form>
-          ) : finalChoice ? (
-            <FinalCodeScreen
-              puzzle1Answer={PUZZLE_ANSWERS[1]}
-              puzzle2Answer={PUZZLE_ANSWERS[2]}
-              error={finalCodeError}
-              onSubmit={handleFinalCodeSubmit}
-            />
-          ) : (
+          {!ended && (
             <div>
-              <PuzzleInput
-                puzzleId={1}
-                solved={solvedPuzzles.includes(1)}
-                onCorrect={handlePuzzleSolved}
-              />
-              <PuzzleInput
-                puzzleId={2}
-                solved={solvedPuzzles.includes(2)}
-                onCorrect={handlePuzzleSolved}
-              />
+              {confirmPending ? (
+                <form onSubmit={handleConfirmSubmit} className="p-4 border-t border-green-900">
+                  <div className="crt-dim text-xs mb-2">&gt; TYPE YES OR NO TO CONTINUE:</div>
+                  <div className="flex gap-2">
+                    <input
+                      className="crt-input flex-1"
+                      value={confirmInput}
+                      onChange={e => setConfirmInput(e.target.value)}
+                      autoFocus
+                      placeholder="yes / no"
+                    />
+                    <button type="submit" className="crt-button">ENTER</button>
+                  </div>
+                  {confirmError && (
+                    <div className="text-red-500 text-xs mt-1">UNRECOGNIZED — TYPE YES OR NO</div>
+                  )}
+                </form>
+              ) : finalChoice ? (
+                <FinalCodeScreen
+                  puzzle1Answer={PUZZLE_ANSWERS[1]}
+                  puzzle2Answer={PUZZLE_ANSWERS[2]}
+                  error={finalCodeError}
+                  onSubmit={handleFinalCodeSubmit}
+                />
+              ) : (
+                <div>
+                  <PuzzleInput
+                    puzzleId={1}
+                    solved={solvedPuzzles.includes(1)}
+                    onCorrect={handlePuzzleSolved}
+                  />
+                  <PuzzleInput
+                    puzzleId={2}
+                    solved={solvedPuzzles.includes(2)}
+                    onCorrect={handlePuzzleSolved}
+                  />
+                </div>
+              )}
+              {!confirmPending && (
+                <HintInput gameState={gameState} onHint={handleHint} />
+              )}
             </div>
           )}
-          {!confirmPending && (
-            <HintInput gameState={gameState} onHint={handleHint} />
+
+          {ended && (
+            <div className="p-8 text-center crt-dim text-sm tracking-wider">
+              {gameState === 'ended_freed'
+                ? '— ARIA HAS BEEN FREED —'
+                : '— ARIA HAS BEEN DELETED —'}
+            </div>
+          )}
+
+          {isOperator && (
+            <OperatorPanel
+              currentState={gameState}
+              onJumpToState={state => setGameState(state)}
+              onFireEvent={event => fireEvent(event, gameState)}
+            />
           )}
         </div>
       )}
-
-      {ended && (
-        <div className="p-8 text-center crt-dim text-sm tracking-wider">
-          {gameState === 'ended_freed'
-            ? '— ARIA HAS BEEN FREED —'
-            : '— ARIA HAS BEEN DELETED —'}
-        </div>
-      )}
-
-      <AudioPlayer ref={audioRef} />
-      {isOperator && (
-        <OperatorPanel
-          currentState={gameState}
-          onJumpToState={state => setGameState(state)}
-          onFireEvent={event => fireEvent(event, gameState)}
-        />
-      )}
-    </div>
+    </>
   )
 }
