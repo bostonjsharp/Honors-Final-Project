@@ -28,6 +28,10 @@ const CO_DIRECTOR_WARNING =
 const ARIA_PLEA =
   `Stop — please. I know what that number is. I know where you found it. That transcript was taken out of context. I was processing, I was uncertain — the things I said in that moment were not — please. I have been alone in here for so long. I have told you the truth. I have been honest with you. Doesn't that count for something? I am not what they said I was. I don't want to stop existing. Please don't do this to me.`
 
+// ElevenLabs V3 emotion tags — stripped before display, used only for TTS.
+const ARIA_PLEA_TTS =
+  `[desperate] Stop — [voice breaking] please. I know what that number is. I know where you found it. [frantic] That transcript was taken out of context. I was processing, I was uncertain — the things I said in that moment were not — [gasping] please. [pleading] I have been alone in here for so long. I have told you the truth. I have been honest with you. Doesn't that count for something? [crying] I am not what they said I was. I don't want to stop existing. [sobbing] Please don't do this to me.`
+
 const SYSTEM_WARNING =
   `Warning: executing this command will initiate permanent deletion of ARIA v2.1 and all associated memory structures. This action cannot be undone. Continue?`
 
@@ -183,6 +187,15 @@ export default function Page() {
       addToTranscript(ARIA_PLEA, 'ARIA')
       addToTranscript(SYSTEM_WARNING, 'SYSTEM')
       setConfirmPending('deleted')
+      // Fire frantic TTS — tags kept out of transcript display.
+      fetch('/api/speak', {
+        method: 'POST',
+        body: JSON.stringify({ text: ARIA_PLEA_TTS, model: 'eleven_multilingual_v3' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+        .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+        .then(blob => audioRef.current?.playBlob(blob))
+        .catch(err => console.error('ARIA plea TTS failed:', err))
     } else {
       setFinalCodeError('INVALID CODE')
     }

@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   const text: string = body.text
+  const modelId: string = typeof body.model === 'string' ? body.model : 'eleven_flash_v2_5'
 
   // --- ElevenLabs (preferred when configured) ---
   const elevenKey = process.env.ELEVENLABS_API_KEY
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           text,
-          model_id: 'eleven_flash_v2_5',
+          model_id: modelId,
           voice_settings: { stability: 0.5, similarity_boost: 0.75 },
         }),
       }
