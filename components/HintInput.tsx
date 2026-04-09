@@ -13,7 +13,15 @@ export default function HintInput({ gameState, onHint }: Props) {
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const [error, setError] = useState(false)
+  const [selectedPuzzle, setSelectedPuzzle] = useState<number | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const needsPuzzleSelector = gameState === 'puzzles_active'
+
+  useEffect(() => {
+    // Reset selector when leaving puzzles_active
+    if (!needsPuzzleSelector) setSelectedPuzzle(null)
+  }, [needsPuzzleSelector])
 
   useEffect(() => {
     return () => {
@@ -34,15 +42,21 @@ export default function HintInput({ gameState, onHint }: Props) {
     }, 1000)
   }, [])
 
+  const isReady = !loading && cooldown === 0 && input.trim().length > 0 &&
+    (!needsPuzzleSelector || selectedPuzzle !== null)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!input.trim() || cooldown > 0) return
+    if (!isReady) return
     setError(false)
     setLoading(true)
 
+    const body: Record<string, unknown> = { question: input, gameState }
+    if (selectedPuzzle !== null) body.puzzleId = selectedPuzzle
+
     const res = await fetch('/api/hint', {
       method: 'POST',
-      body: JSON.stringify({ question: input, gameState }),
+      body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     })
     const json = await res.json()
@@ -62,18 +76,37 @@ export default function HintInput({ gameState, onHint }: Props) {
       <div className="crt-dim text-xs mb-2">
         ASK ARIA {cooldown > 0 ? `— COOLDOWN: ${cooldown}s` : ''}
       </div>
+      {needsPuzzleSelector && (
+        <div className="flex gap-2 mb-2">
+          <span className="crt-dim text-xs self-center">PUZZLE:</span>
+          {[1, 2].map(id => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setSelectedPuzzle(id)}
+              className={`crt-button text-xs px-2 ${selectedPuzzle === id ? 'opacity-100' : 'opacity-40'}`}
+            >
+              {id}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2">
         <input
           className="crt-input flex-1"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Ask a question..."
-          disabled={loading || cooldown > 0}
+          placeholder={
+            needsPuzzleSelector && selectedPuzzle === null
+              ? 'Select a puzzle first...'
+              : 'Ask a question...'
+          }
+          disabled={loading || cooldown > 0 || (needsPuzzleSelector && selectedPuzzle === null)}
         />
         <button
           type="submit"
           className="crt-button"
-          disabled={loading || cooldown > 0 || !input.trim()}
+          disabled={!isReady}
         >
           {loading ? '...' : 'ASK'}
         </button>
