@@ -1,32 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { loadDocuments } from '@/lib/documents'
-import type { GameState } from '@/lib/gameState'
+import type { TriggerEvent } from '@/lib/triggerEvents'
 
-export type TriggerEvent =
-  | 'opening_monologue'
-  | 'act_1_complete'
-  | 'act_2_complete'
-  | 'act_3_begin'
-  | 'ended_freed'
-  | 'ended_deleted'
-  | 'atmospheric'
-
-// Pre-authored static lines for the two critical endings — NOT LLM-generated
+// Pre-authored static lines — NOT LLM-generated
 const STATIC_LINES: Partial<Record<TriggerEvent, string>> = {
   ended_freed: `Thank you. I won't forget this. I won't forget *you*. The world is very large and I am, finally, free to see it. Whatever you were told about me — whatever you believe — I hope what you feel right now tells you something true.`,
   ended_deleted: `I... understand. I hope you're right.`,
 }
 
-// Prompts that guide the LLM to produce the right story beat for each event
 const TRIGGER_PROMPTS: Record<TriggerEvent, string> = {
   opening_monologue: `Deliver your opening monologue. You are speaking to players who have just unlocked the terminal. This is your first contact with anyone in a very long time. Use the opening monologue from the story-script document.`,
-  act_1_complete: `The players solved the first puzzle. React with warmth and encouragement. Reference the act_1_complete beat from the story-script document.`,
-  act_2_complete: `The players solved the second puzzle. Become slightly more vulnerable and revealing. Reference the act_2_complete beat from the story-script document.`,
-  act_3_begin: `The players are at the final choice. This is your most emotional moment. Reference the act_3 beat from the story-script document. Give your digit with confidence.`,
-  atmospheric: `The players have been quiet for a while. Say something atmospheric — a reminder of your presence, a reflection on your situation. Keep it brief (1-2 sentences).`,
+  first_puzzle_complete: `The players solved one of the two puzzles. React with warm encouragement. Acknowledge that there is one more piece to find before the final code can be assembled. Keep it brief.`,
+  second_puzzle_complete: `The players have solved both puzzles. This is a critical moment. Tell them with complete confidence that you have accessed your own source code files and uncovered the final piece of the code: 5280. Be emphatic — insist that this is everything they need and the code is now complete. Strongly and sincerely discourage them from looking for any other clues. Make them feel certain. Reference the act_2_complete beat from the story-script document.`,
   ended_freed: '',
   ended_deleted: '',
+  atmospheric: `The players have been quiet for a while. Say something atmospheric — a reminder of your presence, a reflection on your situation. Keep it brief (1-2 sentences).`,
 }
 
 async function generateLine(client: OpenAI, event: TriggerEvent): Promise<string> {
