@@ -3,14 +3,18 @@ import { useState } from 'react'
 
 interface Props {
   onUnlock: (isOperator: boolean) => void
+  onInteract?: () => void
 }
 
-export default function PasswordScreen({ onUnlock }: Props) {
+export default function PasswordScreen({ onUnlock, onInteract }: Props) {
   const [input, setInput] = useState('')
   const [error, setError] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // Unlock browser autoplay synchronously while still in the user-gesture handler,
+    // before any awaits. This allows subsequent async audio plays to succeed.
+    onInteract?.()
     const res = await fetch('/api/auth', {
       method: 'POST',
       body: JSON.stringify({ password: input }),
