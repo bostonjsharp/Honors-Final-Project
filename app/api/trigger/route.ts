@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const text = STATIC_LINES[event] ?? (await generateLine(new OpenAI({ apiKey }), event))
+    const staticText = STATIC_LINES[event]
+    const text = staticText !== undefined ? staticText : await generateLine(new OpenAI({ apiKey }), event)
     const audio = await textToSpeech(text)
 
     return new NextResponse(audio, {
