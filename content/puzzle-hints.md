@@ -10,7 +10,7 @@ working from vague to specific as the cooldown allows.
 - "The publication date of the newspaper in the room — read it carefully."
 
 ## Puzzle 2 Hints (in order of specificity)
-- "Dr. [NAME] left more behind than you might think."
+- "Dr. Atticus Boone left more behind than you might think."
 - "People who are afraid write things down. Count carefully."
 - "Every entry is a day. How many days did they record?"
 - "Count the diary entries — each one is exactly one day."

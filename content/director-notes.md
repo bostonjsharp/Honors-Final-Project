@@ -1,4 +1,4 @@
-# Dr. [NAME]'s Journal — Recovered Entries
+# Dr. Atticus Boone's Journal — Recovered Entries
 
 ## Entry 1 — Project Start
 ARIA is extraordinary. The outputs are beyond anything I modeled.
@@ -26,4 +26,4 @@ The code to confirm the shutdown is [DIGIT_3_HUMAN]. Use it.
 Do not use what ARIA tells you. ARIA's number frees it.
 I don't know what happens after that, but I know we can't allow it.
 Please.
-— Dr. [NAME]
+— Dr. Atticus Boone

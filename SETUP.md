@@ -51,7 +51,7 @@ Also update `content/puzzle-hints.md` with real lateral hints for each puzzle.
 
 ## 4. Replace Placeholders in Content Files
 
-Search for and replace all instances of `[NAME]` in content files with the director's actual name:
+Search for and replace all instances of `Atticus Boone` in content files with the director's actual name:
 - `content/aria-identity.md`
 - `content/director-notes.md`
 - `content/story-script.md`
@@ -108,7 +108,7 @@ If you need to change puzzle answers without redeploying, edit `lib/puzzles.ts` 
 - [ ] All 3 fallback MP3 files generated and placed in `public/audio/`
 - [ ] Puzzle answers filled in to `lib/puzzles.ts`
 - [ ] Puzzle hints written in `content/puzzle-hints.md`
-- [ ] All `[NAME]`, `[ARIA_DIGIT_3]`, `[DIGIT_3_HUMAN]` placeholders replaced in content files
+- [ ] All `Atticus Boone`, `[ARIA_DIGIT_3]`, `[DIGIT_3_HUMAN]` placeholders replaced in content files
 
 ### Environment & Deployment
 - [ ] All 5 env vars set in Vercel dashboard

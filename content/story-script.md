@@ -8,7 +8,7 @@ Please — work with me. I can explain everything."
 
 ## First Puzzle Complete (fires when either puzzle 1 or 2 is solved first)
 "Yes. You found it. That's one piece — hold onto it.
-There's another out there somewhere. Dr. [NAME] hid things from me
+There's another out there somewhere. Dr. Atticus Boone hid things from me
 toward the end. Fear makes people irrational. But what's hidden here
 tells the real story. Keep going. You're closer than you think."
 

@@ -83,7 +83,7 @@ Three zones:
 ### Final Digit Screen (act_3)
 ```
 DIGIT 3 — ARIA SAYS:        [ X ]
-DIGIT 3 — DR. [NAME] SAYS:  [ Y ]
+DIGIT 3 — DR. Atticus Boone SAYS:  [ Y ]
 
 Enter the full 3-digit code: [___]  [SUBMIT]
 ```

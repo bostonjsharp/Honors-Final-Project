@@ -49,7 +49,7 @@ Search for and replace these strings across the `content/` directory:
 
 | Placeholder | Replace with |
 |---|---|
-| `[NAME]` | The human director's name (used in `aria-identity.md`, `director-notes.md`, `story-script.md`) |
+| `Atticus Boone` | The human director's name (used in `aria-identity.md`, `director-notes.md`, `story-script.md`) |
 | `[ARIA_DIGIT_3]` | ARIA's digit for puzzle 3 (used in `puzzle-hints.md`, `story-script.md`) |
 | `[DIGIT_3_HUMAN]` | The human director's digit for puzzle 3 (used in `director-notes.md`) |
 
