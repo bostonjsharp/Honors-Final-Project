@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 export interface TranscriptEntry {
   id: string
   text: string
+  speaker?: string   // defaults to 'ARIA' when omitted
   timestamp: Date
 }
 
@@ -23,7 +24,7 @@ export default function Transcript({ entries }: Props) {
       {entries.map(entry => (
         <div key={entry.id}>
           <span className="crt-dim text-xs">
-            [{entry.timestamp.toLocaleTimeString()}] ARIA &gt;&nbsp;
+            [{entry.timestamp.toLocaleTimeString()}] {entry.speaker ?? 'ARIA'} &gt;&nbsp;
           </span>
           <span>{entry.text}</span>
         </div>

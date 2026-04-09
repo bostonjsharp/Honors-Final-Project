@@ -3,13 +3,22 @@ import { useState } from 'react'
 
 interface Props {
   puzzleId: number
-  onCorrect: (digit: string, ariaDigit: string | null) => void
+  solved: boolean
+  onCorrect: (puzzleId: number) => void
 }
 
-export default function PuzzleInput({ puzzleId, onCorrect }: Props) {
+export default function PuzzleInput({ puzzleId, solved, onCorrect }: Props) {
   const [input, setInput] = useState('')
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  if (solved) {
+    return (
+      <div className="p-4 border-t border-green-900 opacity-50">
+        <div className="crt-dim text-xs tracking-wider">PUZZLE {puzzleId} — SOLVED ✓</div>
+      </div>
+    )
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,7 +34,7 @@ export default function PuzzleInput({ puzzleId, onCorrect }: Props) {
     setLoading(false)
 
     if (json.valid) {
-      onCorrect(json.digit, json.ariaDigit ?? null)
+      onCorrect(puzzleId)
       setInput('')
     } else {
       setError(true)

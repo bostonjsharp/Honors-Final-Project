@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAnswer, getHumanDigit, getAriaDigit } from '@/lib/puzzles'
+import { validateAnswer } from '@/lib/puzzles'
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
@@ -11,13 +11,5 @@ export async function POST(req: NextRequest) {
   const { puzzleId, answer } = body
   const valid = validateAnswer(puzzleId, answer)
 
-  if (!valid) {
-    return NextResponse.json({ valid: false })
-  }
-
-  return NextResponse.json({
-    valid: true,
-    digit: getHumanDigit(puzzleId),
-    ariaDigit: getAriaDigit(puzzleId),
-  })
+  return NextResponse.json({ valid })
 }
