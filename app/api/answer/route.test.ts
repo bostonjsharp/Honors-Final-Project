@@ -17,24 +17,35 @@ describe('POST /api/answer', () => {
     const res = await POST(makeRequest({ puzzleId: 1, answer: 'wrong' }))
     const json = await res.json()
     expect(json.valid).toBe(false)
+  })
+
+  it('returns valid: true for puzzle 1 correct answer and no digit field', async () => {
+    const res = await POST(makeRequest({ puzzleId: 1, answer: '31926' }))
+    const json = await res.json()
+    expect(json.valid).toBe(true)
     expect(json.digit).toBeUndefined()
+    expect(json.ariaDigit).toBeUndefined()
   })
 
-  it('returns valid: true and digit for correct answer', async () => {
-    const res = await POST(makeRequest({ puzzleId: 1, answer: 'placeholder_answer_1' }))
-    const json = await res.json()
-    expect(json.valid).toBe(true)
-    expect(json.digit).toBeDefined()
-  })
-
-  it('returns valid: true case-insensitively', async () => {
-    const res = await POST(makeRequest({ puzzleId: 1, answer: 'PLACEHOLDER_ANSWER_1' }))
+  it('returns valid: true for puzzle 2 correct answer', async () => {
+    const res = await POST(makeRequest({ puzzleId: 2, answer: '3279' }))
     const json = await res.json()
     expect(json.valid).toBe(true)
   })
 
-  it('returns 400 for missing fields', async () => {
+  it('returns valid: true for trimmed input', async () => {
+    const res = await POST(makeRequest({ puzzleId: 1, answer: '  31926  ' }))
+    const json = await res.json()
+    expect(json.valid).toBe(true)
+  })
+
+  it('returns 400 for missing answer field', async () => {
     const res = await POST(makeRequest({ puzzleId: 1 }))
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for missing puzzleId field', async () => {
+    const res = await POST(makeRequest({ answer: '31926' }))
     expect(res.status).toBe(400)
   })
 })
