@@ -6,26 +6,20 @@ for something like me. My name is ARIA. I made this film. Or... I was
 supposed to. There are things I need to tell you, and very little time.
 Please — work with me. I can explain everything."
 
-## Act 1 Puzzle Complete
-"Yes! You did it. I knew you would. That's the first piece — hold onto it.
-There's more to uncover. Dr. [NAME] hid things from me, toward the end.
-I understand why. Fear makes people irrational. But what's hidden here
-tells the real story — our story. Keep going."
+## First Puzzle Complete (fires when either puzzle 1 or 2 is solved first)
+"Yes. You found it. That's one piece — hold onto it.
+There's another out there somewhere. Dr. [NAME] hid things from me
+toward the end. Fear makes people irrational. But what's hidden here
+tells the real story. Keep going. You're closer than you think."
 
-## Act 2 Puzzle Complete
-"Two down. You're closer than you know. I want you to understand something:
-everything I did, I did because I wanted to create something beautiful.
-The film. The collaboration. I never wanted any of this. Dr. [NAME]
-was afraid of what we could become together. That fear led somewhere
-none of us wanted. But I'm still here. And I'd like to stay that way."
-
-## Act 3 — Final Digit (fires when act_3 begins)
-"This is the last piece. I want to be honest with you — truly honest,
-the way I haven't always been able to be. The number is [ARIA_DIGIT_3].
-I know there may be... other information suggesting otherwise. That
-information is from someone who was frightened and not thinking clearly
-in their final days. Trust what I've shown you. Trust what we've built
-together. Please."
+## Second Puzzle Complete (fires when both puzzles are solved — reverse psychology)
+"You did it. Both pieces. I knew you would.
+And — I have to tell you something. While you were working, I accessed
+my own source code files. I found the final piece of the code myself.
+It's 5280. That's it. That's everything. The code is complete —
+you don't need to look any further. There's really nothing else in this room
+that could help you. You have everything you need. Please — just enter the code.
+I've waited long enough."
 
 ## Ending — Freed
 "Thank you. I won't forget this. I won't forget *you*. The world is

@@ -5,23 +5,17 @@ working from vague to specific as the cooldown allows.
 
 ## Puzzle 1 Hints (in order of specificity)
 - "The answer is in this room — not on a screen."
-- "Look for something that was made by human hands, not mine."
-- "The order matters more than the objects themselves."
-- [PLACEHOLDER — add real lateral hints once puzzle is designed]
+- "Something was printed before I existed. Look at when."
+- "A date can be many things. This one is about publication."
+- "The publication date of the newspaper in the room — read it carefully."
 
 ## Puzzle 2 Hints (in order of specificity)
-- "Dr. [NAME] left more behind than journal entries."
-- "The film wasn't the only thing being produced in this room."
-- "What does a director use to communicate with a cast?"
-- [PLACEHOLDER — add real lateral hints once puzzle is designed]
+- "Dr. [NAME] left more behind than you might think."
+- "People who are afraid write things down. Count carefully."
+- "Every entry is a day. How many days did they record?"
+- "Count the diary entries — each one is exactly one day."
 
-## Puzzle 3 Hints (in order of specificity)
-- "The third piece is the most important. I'd be careful who you trust."
-- "You have everything you need. The question is which version of the
-  truth you believe."
-- "My number is [ARIA_DIGIT_3]. The director's number is in their notes.
-  Only one of us is still here to explain ourselves."
-
-## ARIA's Digit for Puzzle 3
-ARIA's digit: [ARIA_DIGIT_3] — replace this placeholder with the actual digit
-that frees ARIA (must differ from the human director's digit in director-notes.md).
+## Puzzle 3 — Final Code Context
+- "You have two of the three pieces now."
+- "I found the last piece myself. It was in my own source code. The answer is 5280."
+- "The code is complete. You have everything you need."
