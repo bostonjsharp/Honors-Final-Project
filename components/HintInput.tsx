@@ -1,20 +1,16 @@
 'use client'
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Props {
   gameState: string
   onHint: (text: string) => void
 }
 
-const COOLDOWN_SECONDS = 30
-
 export default function HintInput({ gameState, onHint }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [cooldown, setCooldown] = useState(0)
   const [error, setError] = useState(false)
   const [selectedPuzzle, setSelectedPuzzle] = useState<number | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const needsPuzzleSelector = gameState === 'puzzles_active'
 
@@ -23,26 +19,7 @@ export default function HintInput({ gameState, onHint }: Props) {
     if (!needsPuzzleSelector) setSelectedPuzzle(null)
   }, [needsPuzzleSelector])
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [])
-
-  const startCooldown = useCallback(() => {
-    setCooldown(COOLDOWN_SECONDS)
-    intervalRef.current = setInterval(() => {
-      setCooldown(prev => {
-        if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-  }, [])
-
-  const isReady = !loading && cooldown === 0 && input.trim().length > 0 &&
+  const isReady = !loading && input.trim().length > 0 &&
     (!needsPuzzleSelector || selectedPuzzle !== null)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -65,7 +42,6 @@ export default function HintInput({ gameState, onHint }: Props) {
     if (json.text) {
       onHint(json.text)
       setInput('')
-      startCooldown()
     } else {
       setError(true)
     }
@@ -73,9 +49,7 @@ export default function HintInput({ gameState, onHint }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t border-green-900">
-      <div className="crt-dim text-xs mb-2">
-        ASK ARIA {cooldown > 0 ? `— COOLDOWN: ${cooldown}s` : ''}
-      </div>
+      <div className="crt-dim text-xs mb-2">ASK ARIA</div>
       {needsPuzzleSelector && (
         <div className="flex gap-2 mb-2">
           <span className="crt-dim text-xs self-center">PUZZLE:</span>
@@ -101,7 +75,7 @@ export default function HintInput({ gameState, onHint }: Props) {
               ? 'Select a puzzle first...'
               : 'Ask a question...'
           }
-          disabled={loading || cooldown > 0 || (needsPuzzleSelector && selectedPuzzle === null)}
+          disabled={loading || (needsPuzzleSelector && selectedPuzzle === null)}
         />
         <button
           type="submit"

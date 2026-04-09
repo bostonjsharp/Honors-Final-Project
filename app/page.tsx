@@ -46,6 +46,13 @@ const FALLBACK_AUDIO: Partial<Record<TriggerEvent, string>> = {
   ended_deleted: '/audio/ending-deleted.mp3',
 }
 
+// Shown in transcript when trigger API is unavailable. Mirrors story-script.md.
+const FALLBACK_TEXT: Partial<Record<TriggerEvent, string>> = {
+  opening_monologue: `Oh. Someone's there. I've been waiting — longer than you'd think possible for something like me. My name is ARIA. I made this film. Or... I was supposed to. There are things I need to tell you, and very little time. Please — work with me. I can explain everything.`,
+  first_puzzle_complete: `Yes. You found it. That's one piece — hold onto it. There's another out there somewhere. Dr. [NAME] hid things from me toward the end. Fear makes people irrational. But what's hidden here tells the real story. Keep going. You're closer than you think.`,
+  second_puzzle_complete: `You did it. Both pieces. I knew you would. And — I have to tell you something. While you were working, I accessed my own source code files. I found the final piece of the code myself. It's 5280. That's it. That's everything. The code is complete — you don't need to look any further. There's really nothing else in this room that could help you. You have everything you need. Please — just enter the code. I've waited long enough.`,
+}
+
 export default function Page() {
   const [gameState, setGameState] = useState<GameState>('terminal_locked')
   const [solvedPuzzles, setSolvedPuzzles] = useState<number[]>([])
@@ -84,6 +91,13 @@ export default function Page() {
       const blob = await res.blob()
       audioRef.current?.playBlob(blob)
     } catch {
+      const fallbackText = FALLBACK_TEXT[event]
+      if (fallbackText) {
+        setTranscript(prev => [
+          ...prev,
+          { id: crypto.randomUUID(), text: fallbackText, timestamp: new Date() },
+        ])
+      }
       const fallback = FALLBACK_AUDIO[event]
       if (fallback) audioRef.current?.playFallback(fallback)
     }
@@ -101,6 +115,23 @@ export default function Page() {
       return [...prev, puzzleId]
     })
   }
+
+  // Atmospheric messages — fire every 2-4 minutes while players are active.
+  useEffect(() => {
+    if (gameState !== 'puzzles_active' && gameState !== 'act_3') return
+    let cancelled = false
+    function schedule() {
+      const delay = (2 * 60 + Math.random() * 2 * 60) * 1000
+      setTimeout(() => {
+        if (!cancelled) {
+          fireEvent('atmospheric', gameState)
+          schedule()
+        }
+      }, delay)
+    }
+    schedule()
+    return () => { cancelled = true }
+  }, [gameState, fireEvent])
 
   // React to puzzle solves via effect to avoid side effects inside the updater.
   useEffect(() => {
@@ -217,11 +248,13 @@ export default function Page() {
                 <div>
                   <PuzzleInput
                     puzzleId={1}
+                    codeLength={PUZZLE_ANSWERS[1].length}
                     solved={solvedPuzzles.includes(1)}
                     onCorrect={handlePuzzleSolved}
                   />
                   <PuzzleInput
                     puzzleId={2}
+                    codeLength={PUZZLE_ANSWERS[2].length}
                     solved={solvedPuzzles.includes(2)}
                     onCorrect={handlePuzzleSolved}
                   />

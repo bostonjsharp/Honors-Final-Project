@@ -38,7 +38,7 @@ export default function PasswordScreen({ onUnlock }: Props) {
           <span className="crt-dim">Password:</span>
           <input
             className="crt-input flex-1"
-            type="password"
+            type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
             autoFocus

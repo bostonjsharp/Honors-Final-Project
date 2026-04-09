@@ -3,11 +3,12 @@ import { useState } from 'react'
 
 interface Props {
   puzzleId: number
+  codeLength: number
   solved: boolean
   onCorrect: (puzzleId: number) => void
 }
 
-export default function PuzzleInput({ puzzleId, solved, onCorrect }: Props) {
+export default function PuzzleInput({ puzzleId, codeLength, solved, onCorrect }: Props) {
   const [input, setInput] = useState('')
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -49,7 +50,8 @@ export default function PuzzleInput({ puzzleId, solved, onCorrect }: Props) {
           className="crt-input flex-1"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="_ _ _ _ _"
+          placeholder={Array.from({ length: codeLength }, () => '_').join(' ')}
+          maxLength={codeLength}
           disabled={loading}
         />
         <button type="submit" className="crt-button" disabled={loading}>
