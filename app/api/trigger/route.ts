@@ -34,32 +34,36 @@ async function generateLine(client: OpenAI, event: TriggerEvent): Promise<string
   return completion.choices[0].message.content ?? ''
 }
 
-async function textToSpeech(text: string): Promise<ArrayBuffer> {
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`,
-    {
-      method: 'POST',
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY!,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text,
-        model_id: 'eleven_flash_v2_5',
-        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-      }),
-    }
-  )
-  if (!response.ok) throw new Error(`ElevenLabs error: ${response.status}`)
-  return response.arrayBuffer()
+async function textToSpeech(client: OpenAI, text: string): Promise<ArrayBuffer> {
+  // Try ElevenLabs first if configured
+  const elevenKey = process.env.ELEVENLABS_API_KEY
+  const voiceId = process.env.ELEVENLABS_VOICE_ID
+  if (elevenKey && voiceId) {
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: 'POST',
+        headers: { 'xi-api-key': elevenKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_flash_v2_5',
+          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+        }),
+      }
+    )
+    if (response.ok) return response.arrayBuffer()
+    console.warn(`ElevenLabs ${response.status} — falling back to OpenAI TTS`)
+  }
+
+  // Fall back to OpenAI TTS
+  const speech = await client.audio.speech.create({ model: 'tts-1', voice: 'shimmer', input: text })
+  return speech.arrayBuffer()
 }
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY
-  const elevenKey = process.env.ELEVENLABS_API_KEY
-  const voiceId = process.env.ELEVENLABS_VOICE_ID
 
-  if (!apiKey || !elevenKey || !voiceId) {
+  if (!apiKey) {
     return NextResponse.json({ error: 'Not configured' }, { status: 500 })
   }
 
@@ -76,9 +80,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const client = new OpenAI({ apiKey })
     const staticText = STATIC_LINES[event]
-    const text = staticText !== undefined ? staticText : await generateLine(new OpenAI({ apiKey }), event)
-    const audio = await textToSpeech(text)
+    const text = staticText !== undefined ? staticText : await generateLine(client, event)
+    const audio = await textToSpeech(client, text)
 
     return new NextResponse(audio, {
       status: 200,
