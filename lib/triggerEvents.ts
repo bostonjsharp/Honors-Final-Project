@@ -1,8 +1,7 @@
 export type TriggerEvent =
   | 'opening_monologue'
-  | 'act_1_complete'
-  | 'act_2_complete'
-  | 'act_3_begin'
+  | 'first_puzzle_complete'
+  | 'second_puzzle_complete'
   | 'ended_freed'
   | 'ended_deleted'
   | 'atmospheric'
