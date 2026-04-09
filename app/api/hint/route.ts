@@ -36,8 +36,16 @@ export async function POST(req: NextRequest) {
     ? `The player is asking about Puzzle ${puzzleId} specifically. Only reference hints for Puzzle ${puzzleId}.`
     : ''
 
+  const previousHints: string[] = Array.isArray(body.previousHints) ? body.previousHints : []
+
   const client = new OpenAI({ apiKey })
   const docs = await loadDocuments(getDocsForState(body.gameState as GameState))
+
+  // Build conversation history so the LLM avoids repeating earlier hints.
+  const historyMessages = previousHints.flatMap(h => [
+    { role: 'user' as const, content: '(player asked for a hint)' },
+    { role: 'assistant' as const, content: h },
+  ])
 
   try {
     const completion = await client.chat.completions.create({
@@ -45,8 +53,9 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are ARIA. Respond in character using only the information in the documents below. Keep responses concise — they will be spoken aloud. ${puzzleScope}\n\n${docs}`,
+          content: `You are ARIA. Respond in character using only the information in the documents below. Keep responses concise — they will be spoken aloud. Each hint should be slightly more specific than the last. ${puzzleScope}\n\n${docs}`,
         },
+        ...historyMessages,
         { role: 'user', content: body.question },
       ],
       max_tokens: 200,

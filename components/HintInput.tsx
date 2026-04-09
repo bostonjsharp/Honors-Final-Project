@@ -11,11 +11,12 @@ export default function HintInput({ gameState, onHint }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [selectedPuzzle, setSelectedPuzzle] = useState<number | null>(null)
+  // Tracks previous hint responses per puzzle so the LLM doesn't repeat itself.
+  const [hintHistory, setHintHistory] = useState<Record<number, string[]>>({})
 
   const needsPuzzleSelector = gameState === 'puzzles_active'
 
   useEffect(() => {
-    // Reset selector when leaving puzzles_active
     if (!needsPuzzleSelector) setSelectedPuzzle(null)
   }, [needsPuzzleSelector])
 
@@ -29,7 +30,10 @@ export default function HintInput({ gameState, onHint }: Props) {
     setLoading(true)
 
     const body: Record<string, unknown> = { question: input, gameState }
-    if (selectedPuzzle !== null) body.puzzleId = selectedPuzzle
+    if (selectedPuzzle !== null) {
+      body.puzzleId = selectedPuzzle
+      body.previousHints = (hintHistory[selectedPuzzle] ?? []).slice(-3)
+    }
 
     const res = await fetch('/api/hint', {
       method: 'POST',
@@ -42,6 +46,12 @@ export default function HintInput({ gameState, onHint }: Props) {
     if (json.text) {
       onHint(json.text)
       setInput('')
+      if (selectedPuzzle !== null) {
+        setHintHistory(prev => ({
+          ...prev,
+          [selectedPuzzle]: [...(prev[selectedPuzzle] ?? []), json.text].slice(-5),
+        }))
+      }
     } else {
       setError(true)
     }

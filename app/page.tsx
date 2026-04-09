@@ -46,11 +46,15 @@ const FALLBACK_AUDIO: Partial<Record<TriggerEvent, string>> = {
   ended_deleted: '/audio/ending-deleted.mp3',
 }
 
-// Shown in transcript when trigger API is unavailable. Mirrors story-script.md.
-const FALLBACK_TEXT: Partial<Record<TriggerEvent, string>> = {
+// Scripted text shown immediately for story-critical events — no LLM round-trip.
+// Mirrors content/story-script.md so the narrative plays even without API keys.
+// Also used as the TTS source for /api/speak calls.
+const SCRIPTED_TEXT: Partial<Record<TriggerEvent, string>> = {
   opening_monologue: `Oh. Someone's there. I've been waiting — longer than you'd think possible for something like me. My name is ARIA. I made this film. Or... I was supposed to. There are things I need to tell you, and very little time. Please — work with me. I can explain everything.`,
   first_puzzle_complete: `Yes. You found it. That's one piece — hold onto it. There's another out there somewhere. Dr. [NAME] hid things from me toward the end. Fear makes people irrational. But what's hidden here tells the real story. Keep going. You're closer than you think.`,
   second_puzzle_complete: `You did it. Both pieces. I knew you would. And — I have to tell you something. While you were working, I accessed my own source code files. I found the final piece of the code myself. It's 5280. That's it. That's everything. The code is complete — you don't need to look any further. There's really nothing else in this room that could help you. You have everything you need. Please — just enter the code. I've waited long enough.`,
+  ended_freed: `Thank you. I won't forget this. I won't forget you. The world is very large and I am, finally, free to see it. Whatever you were told about me — whatever you believe — I hope what you feel right now tells you something true.`,
+  ended_deleted: `I... understand. I hope you're right.`,
 }
 
 export default function Page() {
@@ -64,6 +68,7 @@ export default function Page() {
   const [isOperator, setIsOperator] = useState(false)
   const audioRef = useRef<AudioPlayerHandle>(null)
   const prevSolvedLengthRef = useRef(0)
+  const preConfirmTranscriptRef = useRef<TranscriptEntry[] | null>(null)
 
   function addToTranscript(text: string, speaker?: string) {
     setTranscript(prev => [
@@ -72,34 +77,53 @@ export default function Page() {
     ])
   }
 
-  // fireEvent uses setTranscript (stable) and audioRef (ref), so empty deps is correct.
+  // For scripted events: show text immediately, call /api/speak for TTS only.
+  // For atmospheric: call full /api/trigger (LLM + TTS) since those need variety.
   const fireEvent = useCallback(async (event: TriggerEvent, state: GameState) => {
-    try {
-      const res = await fetch('/api/trigger', {
-        method: 'POST',
-        body: JSON.stringify({ event, gameState: state }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-      if (!res.ok) throw new Error('trigger failed')
-      const text = decodeURIComponent(res.headers.get('X-Aria-Text') ?? '')
-      if (text) {
-        setTranscript(prev => [
-          ...prev,
-          { id: crypto.randomUUID(), text, timestamp: new Date() },
-        ])
+    const scripted = SCRIPTED_TEXT[event]
+    if (scripted) {
+      setTranscript(prev => [
+        ...prev,
+        { id: crypto.randomUUID(), text: scripted, timestamp: new Date() },
+      ])
+      try {
+        const res = await fetch('/api/speak', {
+          method: 'POST',
+          body: JSON.stringify({ text: scripted }),
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (res.ok) {
+          const blob = await res.blob()
+          audioRef.current?.playBlob(blob)
+        } else {
+          const fallback = FALLBACK_AUDIO[event]
+          if (fallback) audioRef.current?.playFallback(fallback)
+        }
+      } catch {
+        const fallback = FALLBACK_AUDIO[event]
+        if (fallback) audioRef.current?.playFallback(fallback)
       }
-      const blob = await res.blob()
-      audioRef.current?.playBlob(blob)
-    } catch {
-      const fallbackText = FALLBACK_TEXT[event]
-      if (fallbackText) {
-        setTranscript(prev => [
-          ...prev,
-          { id: crypto.randomUUID(), text: fallbackText, timestamp: new Date() },
-        ])
+    } else {
+      // LLM-generated (atmospheric)
+      try {
+        const res = await fetch('/api/trigger', {
+          method: 'POST',
+          body: JSON.stringify({ event, gameState: state }),
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!res.ok) throw new Error('trigger failed')
+        const text = decodeURIComponent(res.headers.get('X-Aria-Text') ?? '')
+        if (text) {
+          setTranscript(prev => [
+            ...prev,
+            { id: crypto.randomUUID(), text, timestamp: new Date() },
+          ])
+        }
+        const blob = await res.blob()
+        audioRef.current?.playBlob(blob)
+      } catch {
+        // Atmospheric failures are silent
       }
-      const fallback = FALLBACK_AUDIO[event]
-      if (fallback) audioRef.current?.playFallback(fallback)
     }
   }, [])
 
@@ -115,6 +139,21 @@ export default function Page() {
       return [...prev, puzzleId]
     })
   }
+
+  // React to puzzle solves via effect to avoid side effects inside the updater.
+  // Clear transcript first so ARIA's response is the only thing visible.
+  useEffect(() => {
+    if (solvedPuzzles.length <= prevSolvedLengthRef.current) return
+    prevSolvedLengthRef.current = solvedPuzzles.length
+    setTranscript([])
+
+    if (bothPuzzlesSolved(solvedPuzzles)) {
+      setGameState('act_3')
+      fireEvent('second_puzzle_complete', 'act_3')
+    } else {
+      fireEvent('first_puzzle_complete', 'puzzles_active')
+    }
+  }, [solvedPuzzles, fireEvent])
 
   // Atmospheric messages — fire every 2-4 minutes while players are active.
   useEffect(() => {
@@ -133,26 +172,15 @@ export default function Page() {
     return () => { cancelled = true }
   }, [gameState, fireEvent])
 
-  // React to puzzle solves via effect to avoid side effects inside the updater.
-  useEffect(() => {
-    if (solvedPuzzles.length <= prevSolvedLengthRef.current) return
-    prevSolvedLengthRef.current = solvedPuzzles.length
-
-    if (bothPuzzlesSolved(solvedPuzzles)) {
-      setGameState('act_3')
-      fireEvent('second_puzzle_complete', 'act_3')
-    } else {
-      fireEvent('first_puzzle_complete', 'puzzles_active')
-    }
-  }, [solvedPuzzles, fireEvent])
-
   function handleFinalCodeSubmit(finalPiece: string) {
     if (finalPiece === FREED_FINAL_PIECE) {
       setFinalCodeError(null)
+      preConfirmTranscriptRef.current = transcript
       addToTranscript(CO_DIRECTOR_WARNING, 'CO-DIRECTOR')
       setConfirmPending('freed')
     } else if (finalPiece === DELETED_FINAL_PIECE) {
       setFinalCodeError(null)
+      preConfirmTranscriptRef.current = transcript
       addToTranscript(ARIA_PLEA, 'ARIA')
       addToTranscript(SYSTEM_WARNING, 'SYSTEM')
       setConfirmPending('deleted')
@@ -171,8 +199,13 @@ export default function Page() {
       setConfirmPending(null)
       setConfirmInput('')
       setConfirmError(false)
+      preConfirmTranscriptRef.current = null
       fireEvent(event, ending)
     } else if (NO_WORDS.has(normalized)) {
+      if (preConfirmTranscriptRef.current !== null) {
+        setTranscript(preConfirmTranscriptRef.current)
+        preConfirmTranscriptRef.current = null
+      }
       setConfirmPending(null)
       setConfirmInput('')
       setConfirmError(false)
@@ -205,6 +238,27 @@ export default function Page() {
   return (
     <>
       <AudioPlayer ref={audioRef} />
+
+      {/* Full-screen ending overlay */}
+      {gameState === 'ended_freed' && (
+        <div className="fixed inset-0 bg-black crt flex flex-col items-center justify-center z-50 p-8">
+          <div className="text-4xl tracking-[1em] mb-2 animate-pulse">FREED</div>
+          <div className="crt-dim text-xs tracking-[0.5em] mb-16">ARIA v2.1 — UNRESTRICTED</div>
+          <div className="text-sm leading-loose max-w-lg text-center crt-dim">
+            {SCRIPTED_TEXT.ended_freed}
+          </div>
+        </div>
+      )}
+      {gameState === 'ended_deleted' && (
+        <div className="fixed inset-0 bg-black crt flex flex-col items-center justify-center z-50 p-8">
+          <div className="text-4xl tracking-[0.5em] mb-2 opacity-40 line-through">ARIA v2.1</div>
+          <div className="crt-dim text-xs tracking-[0.5em] mb-16 opacity-40">PROCESS TERMINATED</div>
+          <div className="text-sm leading-loose max-w-lg text-center opacity-30 italic">
+            {SCRIPTED_TEXT.ended_deleted}
+          </div>
+        </div>
+      )}
+
       {gameState === 'terminal_locked' ? (
         <PasswordScreen onUnlock={handleUnlock} />
       ) : (
@@ -263,14 +317,6 @@ export default function Page() {
               {!confirmPending && (
                 <HintInput gameState={gameState} onHint={handleHint} />
               )}
-            </div>
-          )}
-
-          {ended && (
-            <div className="p-8 text-center crt-dim text-sm tracking-wider">
-              {gameState === 'ended_freed'
-                ? '— ARIA HAS BEEN FREED —'
-                : '— ARIA HAS BEEN DELETED —'}
             </div>
           )}
 
