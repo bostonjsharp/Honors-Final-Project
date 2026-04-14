@@ -11,9 +11,9 @@ working from vague to specific as the cooldown allows.
 
 ## Puzzle 2 Hints (in order of specificity)
 - "Dr. Atticus Boone left more behind than you might think."
-- "People who are afraid write things down. Count carefully."
-- "Every entry is a day. How many days did they record?"
-- "Count the diary entries — each one is exactly one day."
+- "People who are afraid write things down."
+- "Every entry is a day. What days did they record?"
+- "Looks like The day the entry was written makes up the code."
 
 ## Puzzle 3 — Final Code Context
 - "You have two of the three pieces now."
