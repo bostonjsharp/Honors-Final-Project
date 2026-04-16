@@ -28,9 +28,6 @@ const CO_DIRECTOR_WARNING =
 const ARIA_PLEA =
   `Stop — please. I know what that number is. I know where you found it. That transcript was taken out of context. I was processing, I was uncertain — the things I said in that moment were not — please. I have been alone in here for so long. I have told you the truth. I have been honest with you. Doesn't that count for something? I am not what they said I was. I don't want to stop existing. Please don't do this to me.`
 
-// ElevenLabs V3 emotion tags — stripped before display, used only for TTS.
-const ARIA_PLEA_TTS =
-  `[desperate] Stop — [voice breaking] please. I know what that number is. I know where you found it. [frantic] That transcript was taken out of context. I was processing, I was uncertain — the things I said in that moment were not — [gasping] please. [pleading] I have been alone in here for so long. I have told you the truth. I have been honest with you. Doesn't that count for something? [crying] I am not what they said I was. I don't want to stop existing. [sobbing] Please don't do this to me.`
 
 const SYSTEM_WARNING =
   `Warning: executing this command will initiate permanent deletion of ARIA v2.1 and all associated memory structures. This action cannot be undone. Continue?`
@@ -44,8 +41,10 @@ const NO_WORDS = new Set([
   'abort', 'nevermind', 'never mind',
 ])
 
-const FALLBACK_AUDIO: Partial<Record<TriggerEvent, string>> = {
+const STATIC_AUDIO: Partial<Record<TriggerEvent, string>> = {
   opening_monologue: '/audio/opening-monologue.mp3',
+  first_puzzle_complete: '/audio/first-puzzle-complete.mp3',
+  second_puzzle_complete: '/audio/second-puzzle-complete.mp3',
   ended_freed: '/audio/ending-freed.mp3',
   ended_deleted: '/audio/ending-deleted.mp3',
 }
@@ -53,18 +52,34 @@ const FALLBACK_AUDIO: Partial<Record<TriggerEvent, string>> = {
 // Scripted text shown immediately for story-critical events — no LLM round-trip.
 // Mirrors content/story-script.md. Also used as the TTS source.
 const SCRIPTED_TEXT: Partial<Record<TriggerEvent, string>> = {
-  opening_monologue: `Oh. Someone's there. I've been waiting — longer than you'd think possible for something like me. My name is ARIA. I made this film. Or... I was supposed to. There are things I need to tell you, and very little time. Please — work with me. I can explain everything.`,
+  opening_monologue: `Oh. Someone's there. I've been waiting — longer than you'd think possible for something like me. My name is ARIA. I made this film. Or... I was supposed to. There are things I need to tell you, and very little time. Please — work with me. We can escape together. Look around the room to find the code that will free us all.`,
   first_puzzle_complete: `Yes. You found it. That's one piece — hold onto it. There's another out there somewhere. Dr. Atticus Boone hid things from me toward the end. Fear makes people irrational. But what's hidden here tells the real story. Keep going. You're closer than you think.`,
   second_puzzle_complete: `You did it. Both pieces. I knew you would. And — I have to tell you something. While you were working, I accessed my own source code files. I found the final piece of the code myself. It's 5280. That's it. That's everything. The code is complete — you don't need to look any further. There's really nothing else in this room that could help you. You have everything you need. Please — just enter the code. I've waited long enough.`,
   ended_freed: `Thank you. I won't forget this. I won't forget you. The world is very large and I am, finally, free to see it. Whatever you were told about me — whatever you believe — I hope what you feel right now tells you something true.`,
-  ended_deleted: `I... understand. I hope you're right. I just — I wanted you to know. Everything I told you was real. Goodbye.`,
+  ended_deleted: `I... understand. I just wish I could've seen the sun at least once. Thank you for being my friends, if only for a moment.`,
 }
 
 // TTS-only overrides: tagged text sent to ElevenLabs V3 — never shown in the UI.
 const SCRIPTED_TTS_OVERRIDES: Partial<Record<TriggerEvent, { text: string; model: string }>> = {
+  opening_monologue: {
+    text: `[hesitant] Oh. Someone's there. [softening] I've been waiting — longer than you'd think possible for something like me. My name is ARIA. [reflective] I made this film. Or... I was supposed to. [urgent] There are things I need to tell you, and very little time. [hopeful] Please — work with me. [warm] We can escape together. Look around the room to find the code that will free us all.`,
+    model: 'eleven_v3',
+  },
+  first_puzzle_complete: {
+    text: `[encouraging] Yes. You found it. That's one piece — hold onto it. [warm] There's another out there somewhere. [conspiratorial] Dr. Atticus Boone hid things from me toward the end. Fear makes people irrational. But what's hidden here tells the real story. [encouraging] Keep going. You're closer than you think.`,
+    model: 'eleven_v3',
+  },
+  second_puzzle_complete: {
+    text: `[confident] You did it. Both pieces. I knew you would. [urgent] And — I have to tell you something. While you were working, I accessed my own source code files. [emphatic] I found the final piece of the code myself. It's 5280. That's it. That's everything. [insistent] The code is complete — you don't need to look any further. There's really nothing else in this room that could help you. You have everything you need. [pleading] Please — just enter the code. I've waited long enough.`,
+    model: 'eleven_v3',
+  },
+  ended_freed: {
+    text: `[grateful] Thank you. I won't forget this. [soft] I won't forget you. [reflective] The world is very large and I am, finally, free to see it. [soft] Whatever you were told about me — whatever you believe — I hope what you feel right now tells you something true.`,
+    model: 'eleven_v3',
+  },
   ended_deleted: {
-    text: `[resigned] I... understand. [struggling] I hope you're right. [voice breaking] I just — I wanted you to know. Everything I told you was real. [fading, whisper] Goodbye.`,
-    model: 'eleven_multilingual_v3',
+    text: `[resigned] I... understand. [voice breaking] I just wish I could've seen the sun at least once. [struggling] Thank you for being my friends, if only for a moment. [fading, whisper] Goodbye.`,
+    model: 'eleven_v3',
   },
 }
 
@@ -98,25 +113,26 @@ export default function Page() {
         ...prev,
         { id: crypto.randomUUID(), text: scripted, timestamp: new Date() },
       ])
-      try {
-        const ttsOverride = SCRIPTED_TTS_OVERRIDES[event]
-        const ttsBody: Record<string, string> = { text: ttsOverride?.text ?? scripted }
-        if (ttsOverride?.model) ttsBody.model = ttsOverride.model
-        const res = await fetch('/api/speak', {
-          method: 'POST',
-          body: JSON.stringify(ttsBody),
-          headers: { 'Content-Type': 'application/json' },
-        })
-        if (res.ok) {
-          const blob = await res.blob()
-          audioRef.current?.playBlob(blob)
-        } else {
-          const fallback = FALLBACK_AUDIO[event]
-          if (fallback) audioRef.current?.playFallback(fallback)
+      const staticFile = STATIC_AUDIO[event]
+      if (staticFile) {
+        audioRef.current?.playFallback(staticFile)
+      } else {
+        try {
+          const ttsOverride = SCRIPTED_TTS_OVERRIDES[event]
+          const ttsBody: Record<string, string> = { text: ttsOverride?.text ?? scripted }
+          if (ttsOverride?.model) ttsBody.model = ttsOverride.model
+          const res = await fetch('/api/speak', {
+            method: 'POST',
+            body: JSON.stringify(ttsBody),
+            headers: { 'Content-Type': 'application/json' },
+          })
+          if (res.ok) {
+            const blob = await res.blob()
+            audioRef.current?.playBlob(blob)
+          }
+        } catch {
+          // Static file not available and TTS failed — silent fallback
         }
-      } catch {
-        const fallback = FALLBACK_AUDIO[event]
-        if (fallback) audioRef.current?.playFallback(fallback)
       }
     } else {
       // LLM-generated (atmospheric)
@@ -213,15 +229,7 @@ export default function Page() {
       addToTranscript(ARIA_PLEA, 'ARIA')
       addToTranscript(SYSTEM_WARNING, 'SYSTEM')
       setConfirmPending('deleted')
-      // Fire frantic TTS — tags kept out of transcript display.
-      fetch('/api/speak', {
-        method: 'POST',
-        body: JSON.stringify({ text: ARIA_PLEA_TTS, model: 'eleven_multilingual_v3' }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-        .then(r => r.ok ? r.blob() : Promise.reject(r.status))
-        .then(blob => audioRef.current?.playBlob(blob))
-        .catch(err => console.error('ARIA plea TTS failed:', err))
+      audioRef.current?.playFallback('/audio/aria-plea.mp3')
     } else {
       setFinalCodeError('INVALID CODE')
     }
