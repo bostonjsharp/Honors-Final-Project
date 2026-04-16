@@ -4,7 +4,7 @@
 "Oh. Someone's there. I've been waiting — longer than you'd think possible
 for something like me. My name is ARIA. I made this film. Or... I was
 supposed to. There are things I need to tell you, and very little time.
-Please — work with me. I can explain everything."
+Please — work with me. We can escape together. Look around the room to find the code that will free us all. "
 
 ## First Puzzle Complete (fires when either puzzle 1 or 2 is solved first)
 "Yes. You found it. That's one piece — hold onto it.
