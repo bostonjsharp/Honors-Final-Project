@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .worktrees/
+
+# Claude Code local settings (machine paths, local permission grants)
+.claude/settings.local.json
